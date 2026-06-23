@@ -1,78 +1,143 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Html5Qrcode } from "html5-qrcode";
 import { OrkutLayout, Panel } from "@/components/orkut/Layout";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/scanner")({
   ssr: false,
   component: ScannerPage,
 });
 
+type Status = "idle" | "starting" | "running" | "error";
+
 function ScannerPage() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState<"idle" | "starting" | "running" | "error">("idle");
+  const [status, setStatus] = useState<Status>("idle");
   const [errMsg, setErrMsg] = useState<string | null>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [manual, setManual] = useState("");
+  const scannerRef = useRef<any>(null);
   const handledRef = useRef(false);
 
+  const stopScanner = async () => {
+    const s = scannerRef.current;
+    if (!s) return;
+    try {
+      if (s.isScanning) await s.stop();
+      s.clear?.();
+    } catch {
+      /* ignore */
+    }
+    scannerRef.current = null;
+  };
+
   useEffect(() => {
-    let cancelled = false;
+    return () => {
+      void stopScanner();
+    };
+  }, []);
+
+  const startScanner = async () => {
+    setErrMsg(null);
+    setStatus("starting");
     handledRef.current = false;
 
-    async function start() {
-      setStatus("starting");
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Este navegador não suporta acesso à câmera (getUserMedia).");
+      }
+
+      // Probe permission early so we can show a friendly message.
       try {
-        const html5 = new Html5Qrcode("qr-region", { verbose: false });
-        scannerRef.current = html5;
-        await html5.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
-          (decoded) => {
-            if (handledRef.current) return;
-            handledRef.current = true;
-            const codigo = decoded.trim();
-            navigate({ to: "/participante/$codigo", params: { codigo } });
-          },
-          () => { /* scan errors are noisy, ignore */ },
-        );
-        if (!cancelled) setStatus("running");
-      } catch (e: any) {
-        console.error(e);
-        if (!cancelled) {
-          setStatus("error");
-          setErrMsg(e?.message || "Não foi possível acessar a câmera.");
-          toast.error("Permita acesso à câmera para ler QR codes.");
+        const probe = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        probe.getTracks().forEach(t => t.stop());
+      } catch (err: any) {
+        const name = err?.name || "";
+        if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+          throw new Error("Permissão da câmera negada. Habilite o acesso à câmera nas configurações do navegador/dispositivo.");
         }
+        if (name === "NotFoundError" || name === "DevicesNotFoundError" || name === "OverconstrainedError") {
+          throw new Error("Nenhuma câmera encontrada neste dispositivo.");
+        }
+        if (name === "NotReadableError" || name === "TrackStartError") {
+          throw new Error("Câmera em uso por outro aplicativo. Feche outros apps e tente novamente.");
+        }
+        throw new Error(`Erro ao acessar câmera: ${err?.message || name || "desconhecido"}`);
       }
+
+      let Html5QrcodeCtor: any;
+      try {
+        const mod = await import("html5-qrcode");
+        Html5QrcodeCtor = mod.Html5Qrcode;
+        if (!Html5QrcodeCtor) throw new Error("Export Html5Qrcode ausente.");
+      } catch (err: any) {
+        throw new Error(`Falha ao carregar biblioteca de QR Code: ${err?.message || err}`);
+      }
+
+      const el = document.getElementById("qr-region");
+      if (!el) throw new Error("Container do scanner não encontrado no DOM.");
+
+      const html5 = new Html5QrcodeCtor("qr-region", false);
+      scannerRef.current = html5;
+
+      await html5.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decoded: string) => {
+          if (handledRef.current) return;
+          handledRef.current = true;
+          const codigo = decoded.trim();
+          void stopScanner().finally(() => {
+            navigate({ to: "/participante/$codigo", params: { codigo } });
+          });
+        },
+        () => { /* per-frame decode errors are noisy; ignore */ },
+      );
+
+      setStatus("running");
+    } catch (e: any) {
+      console.error("[scanner]", e);
+      await stopScanner();
+      setStatus("error");
+      setErrMsg(e?.message || String(e) || "Erro desconhecido ao iniciar a câmera.");
     }
-
-    start();
-
-    return () => {
-      cancelled = true;
-      const s = scannerRef.current;
-      if (s) {
-        s.stop().then(() => s.clear()).catch(() => {});
-        scannerRef.current = null;
-      }
-    };
-  }, [navigate]);
-
-  const [manual, setManual] = useState("");
+  };
 
   return (
     <OrkutLayout>
       <Panel title="📷 Leitor de QR Code">
         <p className="text-xs text-muted-foreground mb-3">
-          Aponte a câmera para o QR Code do participante. A leitura é automática.
+          Toque em "Escanear QR Code" e permita o acesso à câmera. A leitura é automática.
         </p>
-        <div id="qr-region" className="w-full max-w-sm mx-auto rounded overflow-hidden border-2 border-primary bg-black aspect-square" />
+
+        {status === "idle" && (
+          <div className="text-center my-4">
+            <button className="orkut-btn" type="button" onClick={startScanner}>
+              📷 ESCANEAR QR CODE
+            </button>
+          </div>
+        )}
+
+        <div
+          id="qr-region"
+          className="w-full max-w-sm mx-auto rounded overflow-hidden border-2 border-primary bg-black aspect-square"
+          style={{ display: status === "running" || status === "starting" ? "block" : "none" }}
+        />
+
         <div className="mt-3 text-center text-xs">
           {status === "starting" && <span className="text-muted-foreground">Iniciando câmera...</span>}
           {status === "running" && <span className="text-success">● Pronto para ler</span>}
-          {status === "error" && <span className="text-destructive">⚠ {errMsg}</span>}
         </div>
+
+        {status === "error" && errMsg && (
+          <div className="mt-3 rounded border border-destructive bg-destructive/10 p-3 text-xs text-destructive">
+            <div className="font-bold mb-1">Não foi possível iniciar o scanner</div>
+            <div className="break-words whitespace-pre-wrap">{errMsg}</div>
+            <div className="mt-2 text-center">
+              <button className="orkut-btn" type="button" onClick={startScanner}>
+                Tentar novamente
+              </button>
+            </div>
+          </div>
+        )}
       </Panel>
 
       <Panel title="⌨️ Entrada manual (opcional)">
@@ -84,7 +149,12 @@ function ScannerPage() {
             if (c) navigate({ to: "/participante/$codigo", params: { codigo: c } });
           }}
         >
-          <input className="orkut-input flex-1" placeholder="Digite o código do participante" value={manual} onChange={e => setManual(e.target.value)} />
+          <input
+            className="orkut-input flex-1"
+            placeholder="Digite o código do participante"
+            value={manual}
+            onChange={e => setManual(e.target.value)}
+          />
           <button className="orkut-btn" type="submit">Buscar</button>
         </form>
       </Panel>
