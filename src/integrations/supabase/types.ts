@@ -14,7 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      historico: {
+        Row: {
+          acao: string
+          codigo: string
+          created_at: string
+          id: string
+          usuario_id: string | null
+          usuario_nome: string | null
+        }
+        Insert: {
+          acao: string
+          codigo: string
+          created_at?: string
+          id?: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Update: {
+          acao?: string
+          codigo?: string
+          created_at?: string
+          id?: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Relationships: []
+      }
+      participantes: {
+        Row: {
+          codigo: string
+          combo: string
+          data_hora_checkin: string | null
+          nome: string
+          presente: boolean
+          realizado_por: string | null
+        }
+        Insert: {
+          codigo: string
+          combo: string
+          data_hora_checkin?: string | null
+          nome: string
+          presente?: boolean
+          realizado_por?: string | null
+        }
+        Update: {
+          codigo?: string
+          combo?: string
+          data_hora_checkin?: string | null
+          nome?: string
+          presente?: boolean
+          realizado_por?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          nome: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          nome?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
