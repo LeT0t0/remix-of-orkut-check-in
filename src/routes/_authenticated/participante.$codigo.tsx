@@ -111,6 +111,19 @@ function ParticipanteFicha() {
     }
   }
 
+  async function handleSalvarNotas() {
+    setSavingNotas(true);
+    try {
+      await salvarNotas(codigo, notas);
+      toast.success("Notas salvas");
+      if (participante) setParticipante({ ...participante, notas: notas || null });
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao salvar notas");
+    } finally {
+      setSavingNotas(false);
+    }
+  }
+
   if (loading) {
     return <OrkutLayout><Panel title="Ficha do participante"><p className="text-sm">Carregando...</p></Panel></OrkutLayout>;
   }
