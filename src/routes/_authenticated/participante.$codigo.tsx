@@ -187,6 +187,31 @@ function ParticipanteFicha() {
           <Link to="/participantes" className="orkut-btn orkut-btn-secondary">Lista</Link>
         </div>
 
+        <div className="mt-5">
+          <label className="text-[11px] uppercase font-bold text-muted-foreground block mb-1">
+            📝 Notas
+          </label>
+          <textarea
+            value={notas}
+            onChange={(e) => setNotas(e.target.value)}
+            placeholder="Observações sobre este participante (alergia, acompanhante, etc.)"
+            rows={3}
+            className="w-full border border-border rounded p-2 text-sm bg-background"
+          />
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              onClick={handleSalvarNotas}
+              disabled={savingNotas || notas === (participante.notas ?? "")}
+              className="orkut-btn !py-1 !px-3 text-xs"
+            >
+              {savingNotas ? "Salvando..." : "💾 Salvar notas"}
+            </button>
+            {notas !== (participante.notas ?? "") && (
+              <span className="text-[11px] text-muted-foreground">alterações não salvas</span>
+            )}
+          </div>
+        </div>
+
         {participante.presente && (
           <div className="mt-4 p-3 rounded border border-warning bg-warning/10 text-xs">
             ⚠ <b>PARTICIPANTE JÁ CREDENCIADO</b><br />
