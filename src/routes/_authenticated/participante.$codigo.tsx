@@ -26,12 +26,15 @@ function ParticipanteFicha() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<Participante | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [notas, setNotas] = useState("");
+  const [savingNotas, setSavingNotas] = useState(false);
 
   async function reload() {
     setLoading(true);
     try {
       const p = await fetchParticipante(codigo);
       setParticipante(p);
+      setNotas(p?.notas ?? "");
       setOperador(await fetchOperadorNome(p?.realizado_por ?? null));
     } finally {
       setLoading(false);
