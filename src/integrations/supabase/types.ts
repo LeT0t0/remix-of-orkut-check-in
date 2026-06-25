@@ -47,6 +47,7 @@ export type Database = {
           combo: string
           data_hora_checkin: string | null
           nome: string
+          notas: string | null
           presente: boolean
           realizado_por: string | null
         }
@@ -55,6 +56,7 @@ export type Database = {
           combo: string
           data_hora_checkin?: string | null
           nome: string
+          notas?: string | null
           presente?: boolean
           realizado_por?: string | null
         }
@@ -63,6 +65,7 @@ export type Database = {
           combo?: string
           data_hora_checkin?: string | null
           nome?: string
+          notas?: string | null
           presente?: boolean
           realizado_por?: string | null
         }
