@@ -7,6 +7,15 @@ export interface Participante {
   presente: boolean;
   data_hora_checkin: string | null;
   realizado_por: string | null;
+  notas: string | null;
+}
+
+export async function salvarNotas(codigo: string, notas: string) {
+  const { error } = await supabase
+    .from("participantes")
+    .update({ notas: notas || null })
+    .eq("codigo", codigo);
+  if (error) throw error;
 }
 
 export async function fetchParticipantes(): Promise<Participante[]> {

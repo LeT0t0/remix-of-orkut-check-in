@@ -7,6 +7,7 @@ import {
   confirmarPresenca,
   fetchOperadorNome,
   fetchParticipante,
+  salvarNotas,
   type Participante,
 } from "@/lib/participantes";
 import { toast } from "sonner";
@@ -25,12 +26,15 @@ function ParticipanteFicha() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<Participante | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [notas, setNotas] = useState("");
+  const [savingNotas, setSavingNotas] = useState(false);
 
   async function reload() {
     setLoading(true);
     try {
       const p = await fetchParticipante(codigo);
       setParticipante(p);
+      setNotas(p?.notas ?? "");
       setOperador(await fetchOperadorNome(p?.realizado_por ?? null));
     } finally {
       setLoading(false);
@@ -107,6 +111,19 @@ function ParticipanteFicha() {
     }
   }
 
+  async function handleSalvarNotas() {
+    setSavingNotas(true);
+    try {
+      await salvarNotas(codigo, notas);
+      toast.success("Notas salvas");
+      if (participante) setParticipante({ ...participante, notas: notas || null });
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao salvar notas");
+    } finally {
+      setSavingNotas(false);
+    }
+  }
+
   if (loading) {
     return <OrkutLayout><Panel title="Ficha do participante"><p className="text-sm">Carregando...</p></Panel></OrkutLayout>;
   }
@@ -168,6 +185,31 @@ function ParticipanteFicha() {
           )}
           <Link to="/scanner" className="orkut-btn orkut-btn-secondary">📷 Voltar ao scanner</Link>
           <Link to="/participantes" className="orkut-btn orkut-btn-secondary">Lista</Link>
+        </div>
+
+        <div className="mt-5">
+          <label className="text-[11px] uppercase font-bold text-muted-foreground block mb-1">
+            📝 Notas
+          </label>
+          <textarea
+            value={notas}
+            onChange={(e) => setNotas(e.target.value)}
+            placeholder="Observações sobre este participante (alergia, acompanhante, etc.)"
+            rows={3}
+            className="w-full border border-border rounded p-2 text-sm bg-background"
+          />
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              onClick={handleSalvarNotas}
+              disabled={savingNotas || notas === (participante.notas ?? "")}
+              className="orkut-btn !py-1 !px-3 text-xs"
+            >
+              {savingNotas ? "Salvando..." : "💾 Salvar notas"}
+            </button>
+            {notas !== (participante.notas ?? "") && (
+              <span className="text-[11px] text-muted-foreground">alterações não salvas</span>
+            )}
+          </div>
         </div>
 
         {participante.presente && (
