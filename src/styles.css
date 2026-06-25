@@ -11,7 +11,7 @@
  */
 
 @theme inline {
-  --font-sans: Verdana, Arial, Helvetica, sans-serif;
+  --font-sans: Roboto, sans-serif;
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
