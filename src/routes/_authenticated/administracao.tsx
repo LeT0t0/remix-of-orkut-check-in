@@ -57,8 +57,8 @@ function AdminPage() {
   }, [list, busca, filtro]);
 
   function exportCSV() {
-    const header = ["codigo", "nome", "combo", "presente", "data_hora_checkin", "realizado_por"];
-    const rows = list.map(p => [p.codigo, p.nome, p.combo, p.presente ? "true" : "false", p.data_hora_checkin || "", p.realizado_por || ""]);
+    const header = ["codigo", "nome", "combo", "presente", "data_hora_checkin", "realizado_por", "notas"];
+    const rows = list.map(p => [p.codigo, p.nome, p.combo, p.presente ? "true" : "false", p.data_hora_checkin || "", p.realizado_por || "", p.notas || ""]);
     const csv = [header, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
