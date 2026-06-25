@@ -7,6 +7,7 @@ import {
   confirmarPresenca,
   fetchOperadorNome,
   fetchParticipante,
+  salvarNotas,
   type Participante,
 } from "@/lib/participantes";
 import { toast } from "sonner";
